@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>uep_dm.uep_server &#8212; Data-Mining Server at UEP 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="Data-Mining Server at UEP 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for uep_dm.uep_server</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+
+<span class="n">API_KEY</span> <span class="o">=</span> <span class="s1">&#39;YX48HVaO9bSH18094S4CvEFffF397186ACZ8S3vYRkMLRxMvwOe&#39;</span>
+<span class="n">API_URL</span> <span class="o">=</span> <span class="s1">&#39;https://br-dev.lmcloud.vse.cz/easyminercenter/api&#39;</span>
+
+<span class="n">ANTECEDENT_COLUMNS</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1"># there can be list of data fields (columns) in the input CSV -</span>
+<span class="c1">#  if this array is empty, all data fields not included in consequent will be added into antecedent</span>
+<span class="n">CONSEQUENT_COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Technical_Assistance_5&quot;</span><span class="p">]</span>
+<span class="c1"># data fields for the consequent</span>
+<span class="n">MIN_CONFIDENCE</span> <span class="o">=</span> <span class="mf">0.7</span>
+<span class="c1"># requested minimal value of confidence</span>
+<span class="n">MIN_SUPPORT</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="c1"># requested minimal value of support</span>
+
+<span class="n">CSV_SEPARATOR</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span>
+<span class="n">CSV_ENCODING</span> <span class="o">=</span> <span class="s2">&quot;utf8&quot;</span>
+
+
+<span class="c1">#1 upload data set - create datasource</span>
+<div class="viewcode-block" id="upload_data_set"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.upload_data_set">[docs]</a><span class="k">def</span> <span class="nf">upload_data_set</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="n">csv_separator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    input-file for the data-mining is a csv file, in which &lt;csv_separator&gt; is used as separator</span>
+<span class="sd">    :param csv_file:</span>
+<span class="sd">    :param csv_separator:</span>
+<span class="sd">    :return: an identification number of the csv file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">{(</span><span class="s2">&quot;file&quot;</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))}</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">API_URL</span> <span class="o">+</span> <span class="s1">&#39;/datasources?separator=&#39;</span> <span class="o">+</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">csv_separator</span><span class="p">)</span> <span class="o">+</span>
+                  <span class="s1">&#39;&amp;encoding=&#39;</span> <span class="o">+</span> <span class="n">CSV_ENCODING</span> <span class="o">+</span> <span class="s1">&#39;&amp;type=limited&amp;apiKey=&#39;</span> <span class="o">+</span> <span class="n">API_KEY</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">dataSourceId</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">dataSourceId</span></div>
+
+
+<span class="c1">#2 create miner</span>
+<div class="viewcode-block" id="create_miner"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.create_miner">[docs]</a><span class="k">def</span> <span class="nf">create_miner</span><span class="p">(</span><span class="n">dataSourceId</span><span class="p">,</span> <span class="n">minerName</span><span class="p">,</span> <span class="n">apiURL</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    create a data-mining instance from the server-side</span>
+<span class="sd">    :param dataSourceId: an identification number of the csv file</span>
+<span class="sd">    :param minerName: the name of the data-mining service</span>
+<span class="sd">    :param apiURL: the URL of the API</span>
+<span class="sd">    :param apiKey: user key</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">minerName</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cloud&quot;</span><span class="p">,</span> <span class="s2">&quot;datasourceId&quot;</span><span class="p">:</span> <span class="n">dataSourceId</span><span class="p">})</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s2">&quot;/miners?apiKey=&quot;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json_data</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="n">minerId</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">minerId</span></div>
+
+
+<span class="c1">#3 preprocess data fields to attributes</span>
+<div class="viewcode-block" id="preprocess_data_fields_to_attributes"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.preprocess_data_fields_to_attributes">[docs]</a><span class="k">def</span> <span class="nf">preprocess_data_fields_to_attributes</span><span class="p">(</span><span class="n">miner_id</span><span class="p">,</span> <span class="n">dataSourceId</span><span class="p">,</span> <span class="n">apiURL</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">):</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s1">&#39;/datasources/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dataSourceId</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;?apiKey=&#39;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">datasourceColumns</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;column&#39;</span><span class="p">]</span>
+    <span class="n">attributesColumnsMap</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">datasourceColumns</span><span class="p">:</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="n">col</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;miner&quot;</span><span class="p">:</span> <span class="n">miner_id</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">column</span><span class="p">,</span> <span class="s2">&quot;columnName&quot;</span><span class="p">:</span> <span class="n">column</span><span class="p">,</span> <span class="s2">&quot;specialPreprocessing&quot;</span><span class="p">:</span> <span class="s2">&quot;eachOne&quot;</span><span class="p">})</span>
+        <span class="n">req1</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s2">&quot;/attributes?apiKey=&quot;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json_data</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">req1</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">201</span><span class="p">:</span>
+            <span class="k">break</span>  <span class="c1"># error occured</span>
+        <span class="n">attributesColumnsMap</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">req1</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="c1"># map of created attributes (based on the existing data fields)</span>
+    <span class="k">return</span> <span class="n">attributesColumnsMap</span></div>
+
+
+<span class="c1">#4 prepare antecedent pattern</span>
+<div class="viewcode-block" id="prepare_antecedent_pattern"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.prepare_antecedent_pattern">[docs]</a><span class="k">def</span> <span class="nf">prepare_antecedent_pattern</span><span class="p">(</span><span class="n">antecedentColumns</span><span class="p">,</span> <span class="n">attributes_columns_map</span><span class="p">):</span>
+    <span class="n">antecedent</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">antecedentColumns</span><span class="p">):</span>
+        <span class="c1"># add to antecedent only fields defined in the constant</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">antecedentColumns</span><span class="p">:</span>
+            <span class="n">antecedent</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;attribute&quot;</span><span class="p">:</span> <span class="n">attributes_columns_map</span><span class="p">[</span><span class="n">column</span><span class="p">]})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># add to antecedent all fields not used in consequent</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">attributes_columns_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">column</span> <span class="ow">in</span> <span class="n">antecedentColumns</span><span class="p">):</span>
+                <span class="n">antecedent</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;attribute&quot;</span><span class="p">:</span> <span class="n">attribute_name</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">antecedent</span></div>
+
+
+<span class="c1">#5 prepare consequent pattern</span>
+<div class="viewcode-block" id="prepare_consequent_pattern"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.prepare_consequent_pattern">[docs]</a><span class="k">def</span> <span class="nf">prepare_consequent_pattern</span><span class="p">(</span><span class="n">consequentColumns</span><span class="p">,</span> <span class="n">attributesColumnsMap</span><span class="p">):</span>
+    <span class="n">consequent</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">consequentColumns</span><span class="p">:</span>
+        <span class="n">consequent</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;attribute&quot;</span><span class="p">:</span> <span class="n">attributesColumnsMap</span><span class="p">[</span><span class="n">column</span><span class="p">]})</span>
+    <span class="k">return</span> <span class="n">consequent</span></div>
+
+
+<span class="c1">#6 define data mining task</span>
+<div class="viewcode-block" id="define_data_mining_task"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.define_data_mining_task">[docs]</a><span class="k">def</span> <span class="nf">define_data_mining_task</span><span class="p">(</span><span class="n">apiUrl</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">taskName</span><span class="p">,</span> <span class="n">minerId</span><span class="p">,</span> <span class="n">minerName</span><span class="p">,</span> <span class="n">antecedentColumns</span><span class="p">,</span> <span class="n">consequentColumns</span><span class="p">,</span> <span class="n">attributesColumnsMap</span><span class="p">):</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">antecedent</span> <span class="o">=</span> <span class="n">prepare_antecedent_pattern</span><span class="p">(</span><span class="n">antecedentColumns</span><span class="p">,</span> <span class="n">attributesColumnsMap</span><span class="p">)</span>
+    <span class="n">consequent</span> <span class="o">=</span> <span class="n">prepare_consequent_pattern</span><span class="p">(</span><span class="n">consequentColumns</span><span class="p">,</span> <span class="n">attributesColumnsMap</span><span class="p">)</span>
+    <span class="n">json_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;miner&quot;</span><span class="p">:</span> <span class="n">minerId</span><span class="p">,</span>
+                            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">minerName</span><span class="p">,</span>
+                            <span class="s2">&quot;limitHits&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+                            <span class="s2">&quot;IMs&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                    <span class="p">{</span>
+                                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;CONF&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">MIN_CONFIDENCE</span>
+                                    <span class="p">},</span>
+                                    <span class="p">{</span>
+                                        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SUPP&quot;</span><span class="p">,</span>
+                                        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">MIN_SUPPORT</span>
+                                    <span class="p">}</span>
+                                <span class="p">],</span>
+                            <span class="s2">&quot;antecedent&quot;</span><span class="p">:</span> <span class="n">antecedent</span><span class="p">,</span>
+                            <span class="s2">&quot;consequent&quot;</span><span class="p">:</span> <span class="n">consequent</span>
+                            <span class="p">})</span>
+
+    <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">apiUrl</span> <span class="o">+</span> <span class="s2">&quot;/tasks/&quot;</span><span class="o">+</span><span class="n">taskName</span><span class="o">+</span><span class="s2">&quot;?apiKey=&quot;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json_data</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;create task response code:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">status_code</span><span class="p">))</span>
+    <span class="n">taskId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">taskId</span></div>
+
+
+<span class="c1">#7 running task</span>
+<div class="viewcode-block" id="start_task"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.start_task">[docs]</a><span class="k">def</span> <span class="nf">start_task</span><span class="p">(</span><span class="n">apiURL</span><span class="p">,</span> <span class="n">taskId</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">):</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># check state</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s2">&quot;/tasks/&quot;</span> <span class="o">+</span> <span class="n">taskId</span> <span class="o">+</span> <span class="s2">&quot;/start?apiKey=&quot;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="n">task_state</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;state&quot;</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;task_state:&quot;</span> <span class="o">+</span> <span class="n">task_state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">task_state</span> <span class="o">==</span> <span class="s2">&quot;solved&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">task_state</span> <span class="o">==</span> <span class="s2">&quot;failed&quot;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">CSV_FILE</span> <span class="o">+</span> <span class="s2">&quot;: task failed executing&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="c1">#8 export rules in JSON format</span>
+<span class="c1"># export of standardized PMML AssociationModel</span>
+<span class="c1"># export of GUHA PMML</span>
+<div class="viewcode-block" id="export_rules_in_JSON"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.export_rules_in_JSON">[docs]</a><span class="k">def</span> <span class="nf">export_rules_in_JSON</span><span class="p">(</span><span class="n">apiURL</span><span class="p">,</span> <span class="n">taskId</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">output_format</span> <span class="o">=</span> <span class="s2">&quot;json&quot;</span><span class="p">):</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">}</span>
+    <span class="n">task_flag</span> <span class="o">=</span> <span class="n">start_task</span><span class="p">(</span><span class="n">apiURL</span><span class="p">,</span> <span class="n">taskId</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">task_flag</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;task failed&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s1">&#39;/tasks/&#39;</span> <span class="o">+</span> <span class="n">taskId</span> <span class="o">+</span> <span class="s1">&#39;/rules?apiKey=&#39;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="n">taskRules</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">taskRules</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">taskRules</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;PMML&quot;</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s1">&#39;/tasks/&#39;</span> <span class="o">+</span> <span class="n">taskId</span> <span class="o">+</span> <span class="s1">&#39;/pmml?model=associationmodel&amp;apiKey=&#39;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">)</span>
+        <span class="n">pmml</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">return</span> <span class="n">pmml</span>
+    <span class="k">elif</span> <span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;GUHA_PMML&quot;</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">apiURL</span> <span class="o">+</span> <span class="s1">&#39;/tasks/&#39;</span> <span class="o">+</span> <span class="n">taskId</span> <span class="o">+</span> <span class="s1">&#39;/pmml?model=guha&amp;apiKey=&#39;</span> <span class="o">+</span> <span class="n">apiKey</span><span class="p">)</span>
+        <span class="n">guha_pmml</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">return</span> <span class="n">guha_pmml</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;output_format = &#39;json&#39; or &#39;PMML&#39; or &#39;GUHA_PMLL&#39;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="send_request_to_UEP_server"><a class="viewcode-back" href="../../uep_dm.html#uep_dm.uep_server.send_request_to_UEP_server">[docs]</a><span class="k">def</span> <span class="nf">send_request_to_UEP_server</span><span class="p">(</span><span class="n">csvFile</span><span class="p">,</span> <span class="n">apiURL</span><span class="o">=</span><span class="n">API_URL</span><span class="p">,</span> <span class="n">apiKey</span><span class="o">=</span><span class="n">API_KEY</span><span class="p">,</span> <span class="n">outputFormat</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span>
+                               <span class="n">antecedentColumns</span><span class="o">=</span><span class="n">ANTECEDENT_COLUMNS</span><span class="p">,</span> <span class="n">consequentColumns</span><span class="o">=</span><span class="n">CONSEQUENT_COLUMNS</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    the main function to send a rule-mining request to the UEP server</span>
+<span class="sd">    :param csvFile: a csv file as the input</span>
+<span class="sd">    :param apiURL: the URL for the data-mining API</span>
+<span class="sd">    :param apiKey: userkey</span>
+<span class="sd">    :param outputFormat: the default output format is json, other formats are PMML, GUHA_PMML</span>
+<span class="sd">    :param antecedentColumns: antecedent of a rule</span>
+<span class="sd">    :param consequentColumns: consequent of a rule</span>
+<span class="sd">    :return: identified rules, and a description of the rule-mining task</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">datasourceId</span> <span class="o">=</span> <span class="n">upload_data_set</span><span class="p">(</span><span class="n">csvFile</span><span class="p">,</span> <span class="n">CSV_SEPARATOR</span><span class="p">)</span>
+    <span class="n">minerId</span> <span class="o">=</span> <span class="n">create_miner</span><span class="p">(</span><span class="n">datasourceId</span><span class="p">,</span> <span class="s2">&quot;TEST MINER&quot;</span><span class="p">,</span> <span class="n">apiURL</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">)</span>
+    <span class="n">attributes_columns_map</span> <span class="o">=</span> <span class="n">preprocess_data_fields_to_attributes</span><span class="p">(</span><span class="n">minerId</span><span class="p">,</span> <span class="n">datasourceId</span><span class="p">,</span> <span class="n">apiURL</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">)</span>
+    <span class="n">task_id</span> <span class="o">=</span> <span class="n">define_data_mining_task</span><span class="p">(</span><span class="n">API_URL</span><span class="p">,</span> <span class="n">API_KEY</span><span class="p">,</span> <span class="s2">&quot;simple&quot;</span><span class="p">,</span> <span class="n">minerId</span><span class="p">,</span> <span class="s2">&quot;Test Miner&quot;</span><span class="p">,</span> <span class="n">antecedentColumns</span><span class="p">,</span>
+                                      <span class="n">consequentColumns</span><span class="p">,</span> <span class="n">attributes_columns_map</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">export_rules_in_JSON</span><span class="p">(</span><span class="n">apiURL</span><span class="p">,</span> <span class="n">task_id</span><span class="p">,</span> <span class="n">apiKey</span><span class="p">,</span> <span class="n">output_format</span> <span class="o">=</span> <span class="n">outputFormat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, OBEU team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
