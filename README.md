@@ -5,6 +5,7 @@ A Python wrapper to access UEP data-mining server
 ```
 $ git clone https://github.com/openbudgets/uep_dm.git
 $ cd uep_dm
+uep_dm $ source venv/bin/activate
 uep_dm $ make init
 ```
 
