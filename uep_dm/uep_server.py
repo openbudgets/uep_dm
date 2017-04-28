@@ -4,7 +4,11 @@ import time
 import urllib
 from pprint import pprint
 
-API_KEY = 'YX48HVaO9bSH18094S4CvEFffF397186ACZ8S3vYRkMLRxMvwOe'
+#API_KEY = 'YX48HVaO9bSH18094S4CvEFffF397186ACZ8S3vYRkMLRxMvwOe'
+#RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc
+
+API_KEY = 'RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc'
+
 API_URL = 'https://br-dev.lmcloud.vse.cz/easyminercenter/api'
 
 ANTECEDENT_COLUMNS = []
@@ -22,7 +26,7 @@ CSV_ENCODING = "utf8"
 
 
 #1 upload data set - create datasource
-def upload_data_set(csv_file, csv_separator):
+def upload_data_set(csv_file, csv_separator, csvEncoding):
     """
     input-file for the data-mining is a csv file, in which <csv_separator> is used as separator
     :param csv_file:
@@ -32,7 +36,8 @@ def upload_data_set(csv_file, csv_separator):
     headers = {"Accept": "application/json"}
     files = {("file", open(csv_file, 'rb'))}
     req = requests.post(API_URL + '/datasources?separator=' + urllib.parse.quote(csv_separator) +
-                  '&encoding=' + CSV_ENCODING + '&type=limited&apiKey=' + API_KEY, files=files, headers=headers)
+                  '&encoding=' + csvEncoding + '&type=limited&apiKey=' + API_KEY, files=files, headers=headers)
+
     dataSourceId = req.json()["id"]
     return dataSourceId
 
@@ -96,7 +101,7 @@ def prepare_consequent_pattern(consequentColumns, attributesColumnsMap):
 
 
 #6 define data mining task
-def define_data_mining_task(apiUrl, apiKey, taskName, minerId, minerName, antecedentColumns, consequentColumns, attributesColumnsMap):
+def define_data_mining_task(apiUrl, apiKey, taskName, minerId, minerName, antecedentColumns, consequentColumns, attributesColumnsMap,minConfidence, minSupport):
     headers = {'Content-Type': 'application/json', "Accept": "application/json"}
     antecedent = prepare_antecedent_pattern(antecedentColumns, attributesColumnsMap)
     consequent = prepare_consequent_pattern(consequentColumns, attributesColumnsMap)
@@ -106,11 +111,11 @@ def define_data_mining_task(apiUrl, apiKey, taskName, minerId, minerName, antece
                             "IMs": [
                                     {
                                         "name": "CONF",
-                                        "value": MIN_CONFIDENCE
+                                        "value": minConfidence
                                     },
                                     {
                                         "name": "SUPP",
-                                        "value": MIN_SUPPORT
+                                        "value": minSupport
                                     }
                                 ],
                             "antecedent": antecedent,
@@ -167,7 +172,7 @@ def export_rules_in_JSON(apiURL, taskId, apiKey, output_format = "json"):
 
 
 def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFormat = 'json',
-                               antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS):
+                               antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS, minConfidence=MIN_CONFIDENCE, minSupport=MIN_SUPPORT, csvSeprator=CSV_SEPARATOR, csvEncoding=CSV_ENCODING):
     """
     the main function to send a rule-mining request to the UEP server
     :param csvFile: a csv file as the input
@@ -178,10 +183,10 @@ def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFo
     :param consequentColumns: consequent of a rule
     :return: identified rules, and a description of the rule-mining task
     """
-    datasourceId = upload_data_set(csvFile, CSV_SEPARATOR)
+    datasourceId = upload_data_set(csvFile, csvSeprator, csvEncoding)
     minerId = create_miner(datasourceId, "TEST MINER", apiURL, apiKey)
     attributes_columns_map = preprocess_data_fields_to_attributes(minerId, datasourceId, apiURL, apiKey)
     task_id = define_data_mining_task(API_URL, API_KEY, "simple", minerId, "Test Miner", antecedentColumns,
-                                      consequentColumns, attributes_columns_map)
+                                      consequentColumns, attributes_columns_map, minConfidence, minSupport)
     result = export_rules_in_JSON(apiURL, task_id, apiKey, output_format = outputFormat)
     return result
