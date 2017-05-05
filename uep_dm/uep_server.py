@@ -4,10 +4,14 @@ import time
 import urllib
 from pprint import pprint
 
+#key of developer in Greece
 #API_KEY = 'YX48HVaO9bSH18094S4CvEFffF397186ACZ8S3vYRkMLRxMvwOe'
-#RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc
 
+#key of developer in UNIBN
 API_KEY = 'RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc'
+
+#key of Fraunhofer server
+#API_KEY = ''
 
 API_URL = 'https://br-dev.lmcloud.vse.cz/easyminercenter/api'
 
