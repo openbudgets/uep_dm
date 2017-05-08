@@ -176,7 +176,9 @@ def export_rules_in_JSON(apiURL, taskId, apiKey, output_format = "json"):
 
 
 def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFormat = 'json',
-                               antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS, minConfidence=MIN_CONFIDENCE, minSupport=MIN_SUPPORT, csvSeprator=CSV_SEPARATOR, csvEncoding=CSV_ENCODING):
+                               antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS,
+                               minConfidence=MIN_CONFIDENCE, minSupport=MIN_SUPPORT, csvSeprator=CSV_SEPARATOR,
+                               csvEncoding=CSV_ENCODING):
     """
     the main function to send a rule-mining request to the UEP server
     :param csvFile: a csv file as the input
