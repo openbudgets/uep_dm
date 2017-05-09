@@ -1,5 +1,5 @@
 init:
-        sudo apt-get install python3-pip
+	sudo apt-get install python3-pip
 	pip3 install -r requirements.txt
 	pip3 install .
 test:
