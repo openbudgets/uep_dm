@@ -131,6 +131,14 @@ def define_data_mining_task(apiUrl, apiKey, taskName, minerId, minerName, antece
     taskId = str(req.json()["id"])
     return taskId
 
+#6.1 define outlier tast
+def define_outlier_mining_task(apiUrl, apiKey, taskName, miner_id, minerName, min_support):
+    headers = {'Content-Type': 'application/json', "Accept": "application/json"}
+    json_data = json.dumps({"miner": miner_id, "minSupport": min_support})
+    r = requests.post(apiUrl + "/outliers-tasks?apiKey=" + apiKey, headers=headers, data=json_data.encode())
+    outlier_task_id = str(r.json()["id"])
+    return outlier_task_id
+
 
 #7 running task
 def start_task(apiURL, taskId, apiKey):
@@ -146,6 +154,26 @@ def start_task(apiURL, taskId, apiKey):
         if task_state == "failed":
             print(CSV_FILE + ": task failed executing")
             return False
+
+#7.1 running outlier task
+def start_outlier_task(apiURL, outlier_task_id, apiKey):
+    headers = {'Content-Type': 'application/json', "Accept": "application/json"}
+    while True:
+        time.sleep(1)
+        # check state
+        r = requests.get(API_URL + "/outliers-tasks/" + outlier_task_id + "/start?apiKey=" + API_KEY, headers=headers)
+        while True:
+            time.sleep(1)
+            # check state
+            r = requests.get(API_URL + "/outliers-tasks/" + outlier_task_id + "/state?apiKey=" + API_KEY,
+                             headers=headers)
+            task_state = r.json()["state"]
+            print("task_state:" + task_state)
+            if task_state == "solved":
+                break
+            if task_state == "failed":
+                print("task failed executing")
+                break
 
 
 #8 export rules in JSON format
@@ -174,6 +202,25 @@ def export_rules_in_JSON(apiURL, taskId, apiKey, output_format = "json"):
         print("output_format = 'json' or 'PMML' or 'GUHA_PMLL'")
         return -1
 
+#8.1 export rules in JSON format
+# export of standardized PMML AssociationModel
+# export of GUHA PMML
+def export_rules_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "json"):
+    offset = 0
+    limit = 10
+    headers = {"Accept": "application/json"}
+    task_flag = start_outlier_task(apiURL, outlier_task_id, apiKey)
+    if not task_flag:
+        print('task failed')
+        return -1
+    if output_format == "json":
+        r = requests.get(API_URL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + API_KEY + '&offset=' + offset + '&limit=' + limit, headers=headers)
+        outliers = r.json()['outlier']
+
+        pprint(outliers)
+        return json.dumps(outliers)
+
+
 
 def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFormat = 'json',
                                antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS,
@@ -196,3 +243,4 @@ def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFo
                                       consequentColumns, attributes_columns_map, minConfidence, minSupport)
     result = export_rules_in_JSON(apiURL, task_id, apiKey, output_format = outputFormat)
     return result
+
