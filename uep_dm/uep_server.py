@@ -161,11 +161,11 @@ def start_outlier_task(apiURL, outlier_task_id, apiKey):
     while True:
         time.sleep(1)
         # check state
-        r = requests.get(API_URL + "/outliers-tasks/" + outlier_task_id + "/start?apiKey=" + API_KEY, headers=headers)
+        r = requests.get(apiURL + "/outliers-tasks/" + outlier_task_id + "/start?apiKey=" + apiKey, headers=headers)
         while True:
             time.sleep(1)
             # check state
-            r = requests.get(API_URL + "/outliers-tasks/" + outlier_task_id + "/state?apiKey=" + API_KEY,
+            r = requests.get(apiURL + "/outliers-tasks/" + outlier_task_id + "/state?apiKey=" + apiKey,
                              headers=headers)
             task_state = r.json()["state"]
             print("task_state:" + task_state)
@@ -205,7 +205,7 @@ def export_rules_in_JSON(apiURL, taskId, apiKey, output_format = "json"):
 #8.1 export rules in JSON format
 # export of standardized PMML AssociationModel
 # export of GUHA PMML
-def export_rules_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "json"):
+def export_outliers_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "json"):
     offset = 0
     limit = 10
     headers = {"Accept": "application/json"}
@@ -214,7 +214,7 @@ def export_rules_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "json"
         print('task failed')
         return -1
     if output_format == "json":
-        r = requests.get(API_URL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + API_KEY + '&offset=' + offset + '&limit=' + limit, headers=headers)
+        r = requests.get(apiURL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + apiKey + '&offset=' + offset + '&limit=' + limit, headers=headers)
         outliers = r.json()['outlier']
 
         pprint(outliers)
@@ -222,7 +222,7 @@ def export_rules_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "json"
 
 
 
-def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFormat = 'json',
+def send_request_to_UEP_server(csvFile,taskName="simple", apiURL=API_URL, apiKey=API_KEY, outputFormat = 'json',
                                antecedentColumns=ANTECEDENT_COLUMNS, consequentColumns=CONSEQUENT_COLUMNS,
                                minConfidence=MIN_CONFIDENCE, minSupport=MIN_SUPPORT, csvSeprator=CSV_SEPARATOR,
                                csvEncoding=CSV_ENCODING):
@@ -239,8 +239,13 @@ def send_request_to_UEP_server(csvFile, apiURL=API_URL, apiKey=API_KEY, outputFo
     datasourceId = upload_data_set(csvFile, csvSeprator, csvEncoding)
     minerId = create_miner(datasourceId, "TEST MINER", apiURL, apiKey)
     attributes_columns_map = preprocess_data_fields_to_attributes(minerId, datasourceId, apiURL, apiKey)
-    task_id = define_data_mining_task(API_URL, API_KEY, "simple", minerId, "Test Miner", antecedentColumns,
+    if(taskName=="simple"):
+        task_id = define_data_mining_task(apiURL, apiKey, taskName, minerId, "Test Miner", antecedentColumns,
                                       consequentColumns, attributes_columns_map, minConfidence, minSupport)
-    result = export_rules_in_JSON(apiURL, task_id, apiKey, output_format = outputFormat)
+        result = export_rules_in_JSON(apiURL, task_id, apiKey, output_format = outputFormat)
+    if (taskName == "outlier"):
+        task_id = define_outlier_mining_task(apiURL, apiKey, taskName, minerId, "Test Miner", minSupport)
+        result = export_outliers_in_JSON(apiURL, task_id, apiKey, output_format=outputFormat)
+
     return result
 
