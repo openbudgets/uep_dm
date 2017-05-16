@@ -188,7 +188,7 @@ def export_rules_in_JSON(apiURL, taskId, apiKey, output_format = "json"):
     if output_format == "json":
         r = requests.get(apiURL + '/tasks/' + taskId + '/rules?apiKey=' + apiKey, headers=headers)
         taskRules = r.json()
-        pprint(taskRules)
+        #pprint(taskRules)
         return json.dumps(taskRules)
     elif output_format == "PMML":
         r = requests.get(apiURL + '/tasks/' + taskId + '/pmml?model=associationmodel&apiKey=' + apiKey)
@@ -217,7 +217,7 @@ def export_outliers_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "js
         r = requests.get(apiURL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + apiKey + '&offset=' + offset + '&limit=' + limit, headers=headers)
         outliers = r.json()['outlier']
 
-        pprint(outliers)
+        #pprint(outliers)
         return json.dumps(outliers)
 
 
