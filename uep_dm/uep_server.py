@@ -162,18 +162,13 @@ def start_outlier_task(apiURL, outlier_task_id, apiKey):
         time.sleep(1)
         # check state
         r = requests.get(apiURL + "/outliers-tasks/" + outlier_task_id + "/start?apiKey=" + apiKey, headers=headers)
-        while True:
-            time.sleep(1)
-            # check state
-            r = requests.get(apiURL + "/outliers-tasks/" + outlier_task_id + "/state?apiKey=" + apiKey,
-                             headers=headers)
-            task_state = r.json()["state"]
-            print("task_state:" + task_state)
-            if task_state == "solved":
-                break
-            if task_state == "failed":
-                print("task failed executing")
-                break
+        task_state = r.json()["state"]
+        print("task_state:" + task_state)
+        if task_state == "solved":
+            break
+        if task_state == "failed":
+            print("task failed executing")
+            break
 
 
 #8 export rules in JSON format
