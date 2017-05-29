@@ -8,10 +8,10 @@ from pprint import pprint
 #API_KEY = 'YX48HVaO9bSH18094S4CvEFffF397186ACZ8S3vYRkMLRxMvwOe'
 
 #key of developer in UNIBN
-API_KEY = 'RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc'
+#API_KEY = 'RuR4r60A18063xYpLcM5A84vyC637539zy14Txx6YerGvoxWLlc'
 
 #key of Fraunhofer server
-#API_KEY = ''
+API_KEY = 'sZN53u1sh18065mi3KvrHhwHWj38204A7HW9pnYHGgxj9SasZmA'
 
 API_URL = 'https://br-dev.lmcloud.vse.cz/easyminercenter/api'
 
