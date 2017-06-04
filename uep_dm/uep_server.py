@@ -30,7 +30,7 @@ CSV_ENCODING = "utf8"
 
 
 #1 upload data set - create datasource
-def upload_data_set(csv_file, csv_separator, csvEncoding):
+def upload_data_set(csv_file, apiKey, csv_separator, csvEncoding):
     """
     input-file for the data-mining is a csv file, in which <csv_separator> is used as separator
     :param csv_file:
@@ -231,7 +231,7 @@ def send_request_to_UEP_server(csvFile,taskName="simple", apiURL=API_URL, apiKey
     :param consequentColumns: consequent of a rule
     :return: identified rules, and a description of the rule-mining task
     """
-    datasourceId = upload_data_set(csvFile, csvSeprator, csvEncoding)
+    datasourceId = upload_data_set(csvFile, apiKey, csvSeprator, csvEncoding)
     minerId = create_miner(datasourceId, "TEST MINER", apiURL, apiKey)
     attributes_columns_map = preprocess_data_fields_to_attributes(minerId, datasourceId, apiURL, apiKey)
     if(taskName=="simple"):
