@@ -40,7 +40,7 @@ def upload_data_set(csv_file, csv_separator, csvEncoding):
     headers = {"Accept": "application/json"}
     files = {("file", open(csv_file, 'rb'))}
     req = requests.post(API_URL + '/datasources?separator=' + urllib.parse.quote(csv_separator) +
-                  '&encoding=' + csvEncoding + '&type=limited&apiKey=' + API_KEY, files=files, headers=headers)
+                  '&encoding=' + csvEncoding + '&type=limited&apiKey=' + apiKey, files=files, headers=headers)
 
     dataSourceId = req.json()["id"]
     return dataSourceId
