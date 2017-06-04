@@ -210,9 +210,8 @@ def export_outliers_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "js
         return -1
     if output_format == "json":
         r = requests.get(apiURL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + apiKey + '&offset=' + str(offset) + '&limit=' + str(limit), headers=headers)
-        outliers = r.json()['outlier']
+        outliers = r.json()
 
-        #pprint(outliers)
         return json.dumps(outliers)
 
 
