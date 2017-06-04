@@ -165,10 +165,10 @@ def start_outlier_task(apiURL, outlier_task_id, apiKey):
         task_state = r.json()["state"]
         print("task_state:" + task_state)
         if task_state == "solved":
-            break
+            return True
         if task_state == "failed":
             print("task failed executing")
-            break
+            return False
 
 
 #8 export rules in JSON format
@@ -209,7 +209,7 @@ def export_outliers_in_JSON(apiURL, outlier_task_id, apiKey, output_format = "js
         print('task failed')
         return -1
     if output_format == "json":
-        r = requests.get(apiURL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + apiKey + '&offset=' + offset + '&limit=' + limit, headers=headers)
+        r = requests.get(apiURL + '/outliers-tasks/' + outlier_task_id + '/outliers?apiKey=' + apiKey + '&offset=' + str(offset) + '&limit=' + str(limit), headers=headers)
         outliers = r.json()['outlier']
 
         #pprint(outliers)
