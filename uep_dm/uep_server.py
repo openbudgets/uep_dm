@@ -152,7 +152,7 @@ def start_task(apiURL, taskId, apiKey):
         if task_state == "solved":
             return True
         if task_state == "failed":
-            print(CSV_FILE + ": task failed executing")
+            print("task failed executing")
             return False
 
 #7.1 running outlier task
