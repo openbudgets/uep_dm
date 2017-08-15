@@ -87,10 +87,8 @@ def prepare_antecedent_pattern(antecedentColumns, attributes_columns_map):
     if len(antecedentColumns):
         # add to antecedent only fields defined in the constant
         for column in antecedentColumns:
-            print("antecedentColumns " + column)
             columnNames = str.split(column, '|')
             for oneName in columnNames:
-                #print("row " + oneName)
                 antecedent.append({"attribute": attributes_columns_map[oneName]})
     else:
         # add to antecedent all fields not used in consequent
@@ -101,10 +99,12 @@ def prepare_antecedent_pattern(antecedentColumns, attributes_columns_map):
 
 
 #5 prepare consequent pattern
-def prepare_consequent_pattern(consequentColumns, attributesColumnsMap):
+def prepare_consequent_pattern(consequentColumns, attributes_columns_map):
     consequent = []
     for column in consequentColumns:
-        consequent.append({"attribute": attributesColumnsMap[column]})
+        columnNames = str.split(column, '|')
+        for oneName in columnNames:
+            consequent.append({"attribute": attributes_columns_map[oneName]})
     return consequent
 
 
